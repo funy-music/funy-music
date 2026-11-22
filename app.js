@@ -1,6 +1,11 @@
 const STORAGE_KEY = "funy_music_upcoming_state_v1";
 const PAGE_TITLE = "Funy Music";
 
+// Điền Bin ID và Key từ JSONBin vào đây để cập nhật mảng chính cho mọi máy cùng thấy
+const JSONBIN_ID = "YOUR_BIN_ID_HERE";
+const JSONBIN_API_KEY = "YOUR_ACCESS_OR_MASTER_KEY_HERE";
+const JSONBIN_URL = JSONBIN_ID ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}` : "";
+
 const DEFAULT_UPCOMING = {
   songName: "New Track",
   status: "COMING SOON", // "COMING SOON" or "OUT NOW"
@@ -57,32 +62,76 @@ function sanitizeHttpUrl(rawUrl) {
   }
 }
 
-function loadUpcomingState() {
+function normalizeUpcomingPayload(raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  return {
+    songName: src.songName || DEFAULT_UPCOMING.songName,
+    status: normalizeStatus(src.status),
+    trackUrl: typeof src.trackUrl === "string" ? src.trackUrl : DEFAULT_UPCOMING.trackUrl,
+    tagline: typeof src.tagline === "string" ? src.tagline : DEFAULT_UPCOMING.tagline,
+    logoUrl: src.logoUrl || DEFAULT_UPCOMING.logoUrl
+  };
+}
+
+function loadLocalUpcomingState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_UPCOMING };
-    const parsed = JSON.parse(raw);
-    return {
-      songName: parsed.songName || DEFAULT_UPCOMING.songName,
-      status: normalizeStatus(parsed.status),
-      trackUrl: typeof parsed.trackUrl === "string" ? parsed.trackUrl : DEFAULT_UPCOMING.trackUrl,
-      tagline: typeof parsed.tagline === "string" ? parsed.tagline : DEFAULT_UPCOMING.tagline,
-      logoUrl: parsed.logoUrl || DEFAULT_UPCOMING.logoUrl
-    };
+    return normalizeUpcomingPayload(JSON.parse(raw));
   } catch {
     return { ...DEFAULT_UPCOMING };
   }
 }
 
-function saveUpcomingState(state) {
+function saveLocalUpcomingState(state) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeUpcomingPayload(state)));
   } catch {
     // Ignore storage restrictions
   }
 }
 
-let currentUpcoming = loadUpcomingState();
+async function fetchGlobalUpcoming() {
+  if (!JSONBIN_URL || !JSONBIN_API_KEY) return null;
+  try {
+    const res = await fetch(`${JSONBIN_URL}/latest`, {
+      headers: {
+        "X-Access-Key": JSONBIN_API_KEY
+      }
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const record = json?.record;
+    if (!record || typeof record !== "object") return null;
+    return normalizeUpcomingPayload(record);
+  } catch {
+    return null;
+  }
+}
+
+async function saveUpcomingState(state) {
+  const cleanState = normalizeUpcomingPayload(state);
+  saveLocalUpcomingState(cleanState);
+
+  if (!JSONBIN_URL || !JSONBIN_API_KEY) return;
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Key": JSONBIN_API_KEY
+      },
+      body: JSON.stringify(cleanState)
+    });
+    if (!res.ok) {
+      console.warn("Không lưu được lên JSONBin:", res.status);
+    }
+  } catch (err) {
+    console.warn("Lỗi mạng khi lưu lên JSONBin:", err);
+  }
+}
+
+let currentUpcoming = loadLocalUpcomingState();
 let draftLogoUrl = currentUpcoming.logoUrl;
 
 function extractDominantAccent(imgEl) {
@@ -209,19 +258,23 @@ function setupNavigation() {
     });
   });
 
-  window.addEventListener("scroll", () => {
-    const aboutTop = document.getElementById("about")?.getBoundingClientRect().top ?? Infinity;
-    const tracksTop = document.getElementById("tracks")?.getBoundingClientRect().top ?? Infinity;
-    const threshold = window.innerHeight * 0.45;
+  window.addEventListener(
+    "scroll",
+    () => {
+      const aboutTop = document.getElementById("about")?.getBoundingClientRect().top ?? Infinity;
+      const tracksTop = document.getElementById("tracks")?.getBoundingClientRect().top ?? Infinity;
+      const threshold = window.innerHeight * 0.45;
 
-    if (aboutTop <= threshold) {
-      setActiveNav("about");
-    } else if (tracksTop <= threshold) {
-      setActiveNav("tracks");
-    } else {
-      setActiveNav("home");
-    }
-  }, { passive: true });
+      if (aboutTop <= threshold) {
+        setActiveNav("about");
+      } else if (tracksTop <= threshold) {
+        setActiveNav("tracks");
+      } else {
+        setActiveNav("home");
+      }
+    },
+    { passive: true }
+  );
 }
 
 function syncTrackUrlFieldVisibility(statusValue) {
@@ -307,7 +360,7 @@ function setupShortcutAndModal() {
     if (previewImg) previewImg.src = draftLogoUrl;
   });
 
-  document.getElementById("editor-form")?.addEventListener("submit", (e) => {
+  document.getElementById("editor-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const songName = document.getElementById("input-song-name").value.trim() || DEFAULT_UPCOMING.songName;
     const status = normalizeStatus(document.getElementById("input-status").value);
@@ -322,9 +375,9 @@ function setupShortcutAndModal() {
       logoUrl: draftLogoUrl || DEFAULT_UPCOMING.logoUrl
     };
 
-    saveUpcomingState(currentUpcoming);
     renderUpcoming(currentUpcoming);
     closeEditor();
+    await saveUpcomingState(currentUpcoming);
   });
 }
 
@@ -415,6 +468,14 @@ async function init() {
   renderUpcoming(currentUpcoming);
   setupNavigation();
   setupShortcutAndModal();
+
+  const globalData = await fetchGlobalUpcoming();
+  if (globalData) {
+    currentUpcoming = globalData;
+    draftLogoUrl = currentUpcoming.logoUrl;
+    saveLocalUpcomingState(currentUpcoming);
+    renderUpcoming(currentUpcoming);
+  }
 
   const baseTracks = EXISTING_TRACKS
     .map((t) => {
