@@ -2,8 +2,8 @@ const STORAGE_KEY = "funy_music_upcoming_state_v1";
 const PAGE_TITLE = "Funy Music";
 
 // Điền Bin ID và Key từ JSONBin vào đây để cập nhật mảng chính cho mọi máy cùng thấy
-const JSONBIN_ID = "YOUR_BIN_ID_HERE";
-const JSONBIN_API_KEY = "YOUR_ACCESS_OR_MASTER_KEY_HERE";
+const JSONBIN_ID = "6b02571bffd5d16053d4e69b";
+const JSONBIN_API_KEY = "$2a$10$JZalfCdgpLiGf8IevwPtPOKQznton.VGeL24d7dgrjL9bU/5OQo5m";
 const JSONBIN_URL = JSONBIN_ID ? `https://api.jsonbin.io/v3/b/${JSONBIN_ID}` : "";
 
 const DEFAULT_UPCOMING = {
