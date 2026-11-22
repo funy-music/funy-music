@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>Funy Music</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+<a href="#home" class="brand" data-nav="home">
+        <span class="brand-bao" aria-hidden="true">
+          <img src="bao.png" alt="Funy Music logo" />
+        </span>
+        <span class="brand-name">Funy Music</span>
+      </a>
+
+      <nav class="nav-links" aria-label="Primary Navigation">
+        <a href="#home" class="nav-link is-active" data-nav="home">Home</a>
+        <a href="#tracks" class="nav-link" data-nav="tracks">Tracks</a>
+        <a href="#about" class="nav-link" data-nav="about">About Me</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="home" class="page">
+    <section id="upcoming-stage" class="stage"></section>
+
+    <section id="tracks" class="catalog">
+      <div class="catalog-head">
+        <h2 class="catalog-title">Tracks on Channel</h2>
+        <span id="sync-status" class="sync-status"></span>
+      </div>
+      <div id="track-grid" class="grid"></div>
+    </section>
+
+<section id="about" class="about-section">
+      <div class="about-card">
+        <div class="about-badge">About Me</div>
+        <h2 class="about-title">Funy Music</h2>
+        <p class="about-desc">
+          Hi, im Funny Music! ^^ i specialize in posting fun, humorous, and great music on YouTube.
+          Things like minecraft villager covers of various songs, or original tracks I've composed
+          myself. Pls subscribe to my channel to give me the motivation to keep creating awesome
+          music for yall! ^^
+        </p>
+        <div class="about-actions">
+          <a
+            class="about-yt-btn"
+            href="https://www.youtube.com/@funy-music-18"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Subscribe on YouTube →
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Editor modal opened with Ctrl + Shift + Alt + A -->
+  <div id="editor-backdrop" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editor-heading">
+      <div class="modal-head">
+        <h3 id="editor-heading">Edit Featured Release</h3>
+        <button type="button" id="close-editor" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+
+      <form id="editor-form" class="modal-body">
+        <label class="field">
+          <span>Track Title</span>
+          <input type="text" id="input-song-name" placeholder="e.g. Midnight Groove" required />
+        </label>
+
+        <label class="field">
+          <span>Release Status</span>
+          <select id="input-status">
+            <option value="COMING SOON">COMING SOON</option>
+            <option value="OUT NOW">OUT NOW</option>
+          </select>
+        </label>
+
+        <label class="field" id="track-url-field" hidden>
+          <span>Track URL</span>
+          <input type="url" id="input-track-url" placeholder="https://www.youtube.com/watch?v=..." />
+        </label>
+
+        <label class="field">
+          <span>Short Tagline</span>
+          <input type="text" id="input-tagline" placeholder="Short description shown below the title" />
+        </label>
+
+        <div class="field">
+          <span>Upload Large Logo</span>
+          <input type="file" id="input-logo-file" accept="image/*" />
+          <div class="preview-row">
+            <img id="preview-logo" class="preview-thumb" src="" alt="Logo preview" />
+            <button type="button" id="reset-logo-btn" class="btn-secondary">Reset Default</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-editor" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save & Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="rss.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
